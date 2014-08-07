@@ -1,0 +1,32 @@
+COMPILING
+=========
+
+destroy should compile by simply typing 'make'.
+
+
+
+OUTPUT
+======
+
+The output of all 3 modes is: 
+
+boxcar_option   time of pulse*            Comment
+=============================================================
+0,1,2           i+0.5                     For boxcar of size 1, this is the output for all options, for boxcars of 2 or larger it is ...
+0               i*boxcar + 0.5*boxcar     This will always be an integer (boxcar always a power of 2 for option==0)
+1               i + boxcar*0.5            This will always be an integer (boxcar always a power of 2 for option==1)
+2               i + boxcar*0.5            As for option==1 for powers of 2, also always an integer for boxcars that are multiples of 2
+                                          but will be at at N.5 values (where N is an integer) for odd values of the boxcar.
+
+*  i.e. this is the time of the pulse when multiplied by tsamp,
+   assuming that the 'time of pulse' for a one bin wide pulse in the
+   first bin has a time of 0.5*tsamp after tstart
+
+** i is zero indexed
+
+Output Values
+=============
+0 -> N.5 for the boxcar==1 values, odd number for everything else
+1 -> N.5 for the boxcar==1 values, odd or even integer for everything else
+2 -> N.5 for the boxcar==1 values, odd or even integer values as for option==1 for powers of 2 and multiples of 2, N.5 for odd boxcars
+
