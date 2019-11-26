@@ -6,13 +6,15 @@
 
 void decimate(int* npoints, float* series, int dec_fac);
 void find_mean_sig(int nsamps, float* series, float* mean, float* sig, float thresh);
+int cmpfunc (const void * a, const void * b);
+void find_med_mad(int nsamps, float* series, float* median, float* mad, float* sig);
 void convolve_boxcar(int* npoints, int nsamps, float* series, float* series_conv, int boxcar_size);
 
 void sp_search(float* series, float thresh, int nsmax, int nsamps, double dm, double tsamp, int boxcar_option)
 {
 
   int i, j=0, ns=0, npoints, npulses=0, phaseok;
-  float mean, sig, snr;
+  float mean, sig, median, mad, snr;
   FILE *pulses, *hst;
 
   fprintf(stdout,"Single Pulse Search:\tThreshold = %.2f sigma\n",thresh);
@@ -23,7 +25,9 @@ void sp_search(float* series, float thresh, int nsmax, int nsamps, double dm, do
   /* Write header line - ADD LATER */
 
   /* Search the time series once */ 
-  find_mean_sig(nsamps,series,&mean,&sig,thresh); 
+  //  find_mean_sig(nsamps,series,&mean,&sig,thresh); 
+  find_med_mad(nsamps,series,&median,&mad,&sig); 
+  mean=median;
   for(i=0; i<nsamps; i++){
     snr=(series[i]-mean)/sig;
     if (snr>=thresh){
@@ -40,7 +44,9 @@ void sp_search(float* series, float thresh, int nsmax, int nsamps, double dm, do
     for(ns=1; ns<=nsmax; ns++){                                               // Boxcars 2, 4, 8, 16, 32, ...
       boxcar = (int)pow(2,ns);
       decimate(&npoints,series,2);                                            // decimates by factor of 2, saves _in place_
-      find_mean_sig(npoints,series,&mean,&sig,thresh);
+      //   find_mean_sig(npoints,series,&mean,&sig,thresh);
+      find_med_mad(npoints,series,&median,&mad,&sig);
+      mean=median;
       //printf("%d %f %f %d\n", npoints, mean, sig, boxcar);
       for(i=0; i<npoints; i++){
 	snr=(series[i]-mean)/sig;
@@ -53,7 +59,9 @@ void sp_search(float* series, float thresh, int nsmax, int nsamps, double dm, do
   }else if (boxcar_option==1){
     // SLOWER WAY, BUT CORRECT FOR POWERS OF 2
     float *series_conv;
-    find_mean_sig(npoints,series,&mean,&sig,thresh);
+    //    find_mean_sig(npoints,series,&mean,&sig,thresh);
+    find_med_mad(npoints,series,&median,&mad,&sig);
+    mean=median;
     series_conv=(float*)malloc(nsamps*sizeof(float));                         // CREATE ARRAY 
     for(ns=1; ns<=nsmax; ns++){                                               // Boxcars 2, 4, 8, 16, 32, ...
       boxcar = (int)pow(2,ns);
@@ -69,7 +77,9 @@ void sp_search(float* series, float thresh, int nsmax, int nsamps, double dm, do
   }else if (boxcar_option==2){  
     // SLOWEST WAY, BUT CORRECT FOR ALL BOXCARS
     float *series_conv;
-    find_mean_sig(npoints,series,&mean,&sig,thresh);
+    //    find_mean_sig(npoints,series,&mean,&sig,thresh);
+    find_med_mad(npoints,series,&median,&mad,&sig);
+    mean=median;
     series_conv=(float*)malloc(nsamps*sizeof(float));                         // CREATE ARRAY 
     for(ns=1; ns<=(int)pow(2,nsmax); ns++){                                   // Boxcars 2, 3, 4, 5, 6, 7, 8, 9, ...
       boxcar = ns;
@@ -126,6 +136,52 @@ void find_mean_sig(int nsamps, float* series, float* mean, float* sig, float thr
   }
   *mean=s/(float)j;
   *sig=sqrt((ss/(float)j)-((*mean)*(*mean)));
+  //  fprintf(stdout,"FLAG mean %lf rms %lf\n",*mean,*sig);
+  return;
+}
+
+int cmpfunc (const void * a, const void * b) 
+{
+  float fa = *(const float*) a;
+  float fb = *(const float*) b;
+  return (fa > fb) - (fa < fb);
+}
+
+void find_med_mad(int nsamps, float* series, float* median, float* mad, float* sig)
+{
+  int i,j=0;
+  float val;
+  float series_sorted[nsamps];
+
+  /* Sort the time series */
+  for (i=0; i<nsamps; i++){
+    series_sorted[i]=series[i];
+  }
+  qsort(series_sorted, nsamps, sizeof(float), cmpfunc);
+  /* Get median */
+  if (nsamps%2 == 0){
+    *median=0.5*(series_sorted[nsamps/2]+series_sorted[nsamps/2 - 1]);
+  }else{ 
+    *median=series_sorted[nsamps/2];
+  }
+  /* Get median absolute deviation */
+  for (i=0; i<nsamps; i++){
+    val = series_sorted[i]-*median;
+    if (val >= 0.0){
+      series_sorted[i] = series_sorted[i] - *median;
+    }else if (val < 0.0){
+      series_sorted[i] = -(series_sorted[i] - *median);
+    }
+  }
+  qsort(series_sorted, nsamps, sizeof(float), cmpfunc);
+  if (nsamps%2 == 0){
+    *mad=0.5*(series_sorted[nsamps/2]+series_sorted[nsamps/2 - 1]);
+  }else{ 
+    *mad=series_sorted[nsamps/2];
+  }
+  *sig = *mad/0.6744897501960817; // C does not have an inverf() function! This should be sqrt(2)*inverf(1/2) for which this is an approximate, but hopefully good enough value
+  //  fprintf(stdout,"FLAG rms %lf median %lf MAD %lf\n",*sig,*median,*mad);
+
   return;
 }
 
