@@ -23,6 +23,10 @@ float* read_data(char filename[],float* series, int* nsamps, int sigproc, int as
   if (sigproc==1 && ascii==0){              // Sigproc binary format
     /* For sigproc binary format need to read header first */
     ifp=fopen(filename,"rb");
+    if (ifp == NULL){
+      fprintf(stderr,"Cannot open input file. Exiting ...\n");
+      exit(2);
+    }      
     get_string(ifp,&nbytes,string);
     if (!strings_equal(string,"HEADER_START")){
       rewind(ifp);
@@ -167,6 +171,10 @@ float* read_data(char filename[],float* series, int* nsamps, int sigproc, int as
       exit(1);
     }
     ifp=fopen(filename,"r");
+    if (ifp == NULL){
+      fprintf(stderr,"Cannot open input file. Exiting ...\n");
+      exit(2);
+    }
     for(i=0; i<n; i++){
       fscanf(ifp,"%f",&series[i]);
     }
