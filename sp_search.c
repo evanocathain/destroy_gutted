@@ -28,6 +28,7 @@ void sp_search(float* series, float thresh, int nsmax, int nsamps, double dm, do
   //  find_mean_sig(nsamps,series,&mean,&sig,thresh); 
   find_med_mad(nsamps,series,&median,&mad,&sig); 
   mean=median;
+  //  printf("MEDIAN %lf \n", mean);
   for(i=0; i<nsamps; i++){
     snr=(series[i]-mean)/sig;
     if (snr>=thresh){
@@ -60,12 +61,13 @@ void sp_search(float* series, float thresh, int nsmax, int nsamps, double dm, do
     // SLOWER WAY, BUT CORRECT FOR POWERS OF 2
     float *series_conv;
     //    find_mean_sig(npoints,series,&mean,&sig,thresh);
-    find_med_mad(npoints,series,&median,&mad,&sig);
-    mean=median;
+    //find_med_mad(npoints,series,&median,&mad,&sig);
+    //mean=median;
     series_conv=(float*)malloc(nsamps*sizeof(float));                         // CREATE ARRAY 
     for(ns=1; ns<=nsmax; ns++){                                               // Boxcars 2, 4, 8, 16, 32, ...
       boxcar = (int)pow(2,ns);
       convolve_boxcar(&npoints,nsamps,series,series_conv,boxcar);
+      mean = median*boxcar;
       for(i=0; i<npoints; i++){
 	snr=(series_conv[i]-mean)/(sig*sqrt(boxcar));
 	if (snr>=thresh){
@@ -78,12 +80,13 @@ void sp_search(float* series, float thresh, int nsmax, int nsamps, double dm, do
     // SLOWEST WAY, BUT CORRECT FOR ALL BOXCARS
     float *series_conv;
     //    find_mean_sig(npoints,series,&mean,&sig,thresh);
-    find_med_mad(npoints,series,&median,&mad,&sig);
-    mean=median;
+    //find_med_mad(npoints,series,&median,&mad,&sig);
+    //mean=median;
     series_conv=(float*)malloc(nsamps*sizeof(float));                         // CREATE ARRAY 
     for(ns=1; ns<=(int)pow(2,nsmax); ns++){                                   // Boxcars 2, 3, 4, 5, 6, 7, 8, 9, ...
       boxcar = ns;
       convolve_boxcar(&npoints,nsamps,series,series_conv,boxcar);
+      mean = median*boxcar;
       for(i=0; i<npoints; i++){
 	snr=(series_conv[i]-mean)/(sig*sqrt(boxcar));
 	if (snr>=thresh){
