@@ -154,7 +154,9 @@ void find_med_mad(int nsamps, float* series, float* median, float* mad, float* s
 {
   int i,j=0;
   float val;
-  float series_sorted[nsamps];
+//  float series_sorted[nsamps];					// This way blows the stack!
+  float *series_sorted;
+  series_sorted=(float*)malloc(nsamps*sizeof(float));                         // CREATE ARRAY 
 
   /* Sort the time series */
   for (i=0; i<nsamps; i++){

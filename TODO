@@ -1,6 +1,8 @@
 Evan's To-Do List
 =================
 
+add in an option for boxcar steps to go in steps of 1.5x as well as the default 2x
+
 change the hard-coded thresh<3.0 to thresh<-minsig, where minsig is the minimum time series value divided by sigma
 
 add more _useful_comments and remove any needlessly commented out lines. make code shorter if possible anywhere
